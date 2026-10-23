@@ -8,6 +8,8 @@ export interface Category {
   name: string;
   // 榜单分类按读者分；分类库的分类有「主分类、主题、角色、情节」之分
   group: string;
+  // 分类库的分类有一句说明（后加的字段）
+  description?: string;
 }
 
 export const GENDER_LABEL: Record<Gender, string> = { male: "男频", female: "女频" };
@@ -38,6 +40,7 @@ interface RawCategory {
   category_id: number;
   name: string;
   label: string;
+  description?: string;
 }
 
 // 分类库的分类来自接口，gender=-1 是全部
@@ -53,6 +56,7 @@ export async function libraryCategories(gender?: Gender): Promise<CategoryList> 
       id: String(c.category_id),
       name: decode(c.name),
       group: c.label,
+      description: decode(c.description),
     })),
     raw: raw.data,
   };

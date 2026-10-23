@@ -11,6 +11,11 @@ export interface CachedChapter {
   title: string;
   text: string;
   fetchedAt: number;
+  // 以下是后加的字段，旧缓存里没有
+  words?: number;
+  publishedAt?: string;
+  prevId?: string;
+  nextId?: string;
 }
 
 const chaptersDir = () => join(cacheDir(), "chapters");

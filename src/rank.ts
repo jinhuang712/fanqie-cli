@@ -1,4 +1,6 @@
 import { apiGet, parseCount } from "./api.ts";
+import { coverUrl } from "./cover.ts";
+import { formatDate } from "./format.ts";
 import { GENDER_PARAM, rankCategories, resolveCategory, type Gender } from "./categories.ts";
 
 export type RankKind = "read" | "new";
@@ -16,6 +18,15 @@ export interface RankBook {
   words?: number;
   reads?: number;
   lastChapterTitle: string;
+  // 以下是后加的字段
+  abstract: string;
+  coverUrl: string;
+  authorId: string;
+  firstChapterId: string;
+  lastChapterId: string;
+  lastUpdate: string;
+  // 比上一期上升的名次，负数是下降，0 是没变
+  rankChange: number;
 }
 
 interface RawRank {
@@ -30,7 +41,15 @@ interface RawRank {
       wordNumber: string;
       read_count: string;
       lastChapterTitle: string;
+      abstract?: string;
+      thumbUri?: string;
+      uid?: string;
+      firstChapterItemId?: string;
+      lastChapterItemId?: string;
+      lastChapterUpdateTime?: string;
+      rankPosDiff?: number;
     }>;
+    rankVersion?: string;
   };
 }
 
@@ -42,6 +61,8 @@ export interface RankResult {
   total: number;
   books: RankBook[];
   raw: unknown;
+  // 榜单统计截止的日期（后加的字段）
+  statsDate: string;
 }
 
 export async function rank(
@@ -77,6 +98,22 @@ export async function rank(
     words: parseCount(b.wordNumber),
     reads: parseCount(b.read_count),
     lastChapterTitle: decode(b.lastChapterTitle),
+    abstract: decode(b.abstract).trim(),
+    coverUrl: coverUrl(b.thumbUri),
+    authorId: b.uid ?? "",
+    firstChapterId: b.firstChapterItemId ?? "",
+    lastChapterId: b.lastChapterItemId ?? "",
+    lastUpdate: formatDate(b.lastChapterUpdateTime),
+    rankChange: Number(b.rankPosDiff) || 0,
   }));
-  return { gender, kind, category: category.name, offset, total: raw.data.total_num, books, raw };
+  return {
+    gender,
+    kind,
+    category: category.name,
+    offset,
+    total: raw.data.total_num,
+    books,
+    raw,
+    statsDate: formatDate(raw.data.rankVersion),
+  };
 }

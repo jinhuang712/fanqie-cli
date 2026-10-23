@@ -3,8 +3,8 @@
 import { readdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 
-// 官方域名白名单。字体 CDN（bytetos.com）是番茄页面自己引用的
-export const ALLOWED = ["fanqienovel.com", "snssdk.com", "bytetos.com"];
+// 官方域名白名单。字体 CDN（bytetos.com）、图片 CDN（byteimg.com，封面）是番茄页面和接口自己引用的
+export const ALLOWED = ["fanqienovel.com", "snssdk.com", "bytetos.com", "byteimg.com"];
 
 const HOST = /\b(?:[a-z0-9-]+\.)+(?:com|cn|net|org|io|dev|xyz)\b/gi;
 

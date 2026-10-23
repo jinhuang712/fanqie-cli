@@ -193,7 +193,9 @@ EOF
     tar -xzf "$dl/src.tar.gz" -C "$stage" --strip-components=1 \
       || die "解压失败，下载的文件可能不完整。" "重新运行一次。"
   fi
-  [ -f "$stage/src/cli.ts" ] && [ -f "$stage/package.json" ] || die "代码目录里没有 src/cli.ts 或 package.json，来源不对。"
+  if [ ! -f "$stage/src/cli.ts" ] || [ ! -f "$stage/package.json" ]; then
+    die "代码目录里没有 src/cli.ts 或 package.json，来源不对。"
+  fi
 
   # ---------- 依赖 ----------
   if [ "${FANQIE_SKIP_DEPS:-}" = "1" ]; then

@@ -1,23 +1,33 @@
-import { existsSync, mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs'
-import { tmpdir } from 'node:os'
-import { join } from 'node:path'
-import { networkError } from './errors.ts'
+import { existsSync, mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
+import { networkError } from "./errors.ts";
 
 export interface QrWindow {
   // 窗口被用户关闭（或进程退出）时完成
-  closed: Promise<void>
-  close(): void
+  closed: Promise<void>;
+  close(): void;
 }
 
 const CHROME_PATHS = [
-  '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome',
-  '/Applications/Microsoft Edge.app/Contents/MacOS/Microsoft Edge',
-  '/Applications/Chromium.app/Contents/MacOS/Chromium',
-]
-const CHROME_COMMANDS = ['google-chrome', 'google-chrome-stable', 'chromium', 'chromium-browser', 'microsoft-edge']
+  "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome",
+  "/Applications/Microsoft Edge.app/Contents/MacOS/Microsoft Edge",
+  "/Applications/Chromium.app/Contents/MacOS/Chromium",
+];
+const CHROME_COMMANDS = [
+  "google-chrome",
+  "google-chrome-stable",
+  "chromium",
+  "chromium-browser",
+  "microsoft-edge",
+];
 
 export function findChrome(): string | undefined {
-  return CHROME_PATHS.find((p) => existsSync(p)) ?? CHROME_COMMANDS.map((c) => Bun.which(c)).find(Boolean) ?? undefined
+  return (
+    CHROME_PATHS.find((p) => existsSync(p)) ??
+    CHROME_COMMANDS.map((c) => Bun.which(c)).find(Boolean) ??
+    undefined
+  );
 }
 
 export const qrPage = (png: string): string => `<!doctype html>
@@ -33,40 +43,40 @@ export const qrPage = (png: string): string => `<!doctype html>
 <p>用番茄小说 App 扫码<br>并在手机上确认登录</p>
 <p><small>登录成功后这个窗口会自动关闭</small></p>
 <p class="vip">没有开通 SVIP 的账号，只能读前 10 章左右</p>
-</body></html>`
+</body></html>`;
 
 // 只弹一个小窗显示二维码；番茄的页面不会打开
 export function openQrWindow(png: string): QrWindow {
-  const chrome = findChrome()
+  const chrome = findChrome();
   if (!chrome) {
-    throw networkError('没有找到 Chrome 或 Edge，没法弹出二维码窗口。请安装 Google Chrome 后重试')
+    throw networkError("没有找到 Chrome 或 Edge，没法弹出二维码窗口。请安装 Google Chrome 后重试");
   }
-  const dir = mkdtempSync(join(tmpdir(), 'fanqie-qr-'))
-  mkdirSync(join(dir, 'profile'))
-  const html = join(dir, 'index.html')
-  writeFileSync(html, qrPage(png))
+  const dir = mkdtempSync(join(tmpdir(), "fanqie-qr-"));
+  mkdirSync(join(dir, "profile"));
+  const html = join(dir, "index.html");
+  writeFileSync(html, qrPage(png));
   const proc = Bun.spawn(
     [
       chrome,
       `--app=file://${html}`,
-      `--user-data-dir=${join(dir, 'profile')}`,
-      '--window-size=340,500',
+      `--user-data-dir=${join(dir, "profile")}`,
+      "--window-size=340,500",
       // 不要弹出翻译栏，它会盖住二维码
-      '--lang=zh-CN',
-      '--disable-features=Translate,TranslateUI',
-      '--no-first-run',
-      '--no-default-browser-check',
-      '--disable-extensions',
+      "--lang=zh-CN",
+      "--disable-features=Translate,TranslateUI",
+      "--no-first-run",
+      "--no-default-browser-check",
+      "--disable-extensions",
     ],
-    { stdout: 'ignore', stderr: 'ignore', stdin: 'ignore' },
-  )
+    { stdout: "ignore", stderr: "ignore", stdin: "ignore" },
+  );
   const closed = proc.exited.then(() => {
-    rmSync(dir, { recursive: true, force: true })
-  })
+    rmSync(dir, { recursive: true, force: true });
+  });
   return {
     closed,
     close: () => {
-      proc.kill()
+      proc.kill();
     },
-  }
+  };
 }

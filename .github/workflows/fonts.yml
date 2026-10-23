@@ -4,7 +4,7 @@ name: 字形检查
 # 所以退出码要区分：1 = 发现不认得的字形（job 失败，GitHub 会发邮件），2 = 网络失败（只警告）。
 on:
   schedule:
-    - cron: '17 3 * * 1'
+    - cron: "17 3 * * 1"
   workflow_dispatch:
 
 permissions:

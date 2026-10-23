@@ -21,6 +21,7 @@ export interface Options {
   page?: string;
   for?: string;
   id?: string;
+  brief?: boolean;
 }
 
 export interface Book {

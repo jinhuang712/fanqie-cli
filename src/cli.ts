@@ -8,7 +8,7 @@ import type { Options } from "./types.ts";
 const USAGE = `用法：fanqie <命令> [参数] [选项]
 
 命令：
-  search <关键词>              搜索书籍
+  search <关键词>...           搜索书籍，可给多个关键词（合并结果）；--brief 简短输出
   rank                        榜单
   library                     分类库
   categories                  分类列表
@@ -28,6 +28,7 @@ const OPTIONS = {
   json: { type: "boolean", default: false },
   raw: { type: "boolean", default: false },
   refresh: { type: "boolean", default: false },
+  brief: { type: "boolean", default: false },
   help: { type: "boolean", short: "h", default: false },
   offset: { type: "string" },
   sort: { type: "string" },

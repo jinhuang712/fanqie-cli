@@ -8,7 +8,15 @@ import { LIBRARY_PAGE, library, type Status } from "./library.ts";
 import { RANK_PAGE, rank, type RankKind } from "./rank.ts";
 import { openQrWindow } from "./qrwindow.ts";
 import { formatChapters, readById, readRange } from "./read.ts";
-import { WEB_PAGE, searchRelevance, searchWeb } from "./search.ts";
+import {
+  WEB_PAGE,
+  briefBook,
+  formatSearch,
+  searchKeywords,
+  searchRelevance,
+  searchWeb,
+  type SearchBook,
+} from "./search.ts";
 import { getToc } from "./toc.ts";
 import type { Options, Output } from "./types.ts";
 
@@ -36,43 +44,40 @@ export function parseEnum<T extends string>(
 const SORTS = ["relevance", "new", "hot"] as const;
 
 const search: Handler = async (args, opts) => {
-  const query = args.join(" ").trim();
-  if (!query) throw usageError("缺少搜索关键词");
+  if (args.some((a) => !a.trim())) throw usageError("搜索关键词不能是空的");
+  // 多个关键词各搜一次再合并；重复的关键词只算一个
+  const keywords = [...new Set(args.map((a) => a.trim()))];
+  if (!keywords.length) throw usageError("缺少搜索关键词");
   const offset = parseNonNegative(opts.offset, "offset");
   const sort = parseEnum(opts.sort, "sort", SORTS, "relevance")!;
+  const brief = Boolean(opts.brief);
   // 相关度排序走移动端接口（直接 HTTP）；最新、最热要走浏览器
   if (sort !== "relevance" && offset % WEB_PAGE !== 0) {
     throw usageError(`--sort ${sort} 每页 ${WEB_PAGE} 本，--offset 要是 ${WEB_PAGE} 的倍数`);
   }
-  const { result, raw } =
-    sort === "relevance"
-      ? await searchRelevance(query, offset)
-      : await searchWeb(query, sort, offset);
-  // 网页搜索的分类是逗号分隔的多个标签，第一个是主分类
-  const text = result.books.length
-    ? yamlBlock(
-        result.books.map((b) => {
-          const [category, ...tags] =
-            sort === "relevance"
-              ? [b.category]
-              : b.category
-                  .split(/[,，]/)
-                  .map((t) => t.trim())
-                  .filter(Boolean);
-          return [
-            ["书id", b.bookId],
-            ["书名", b.title],
-            ["作者", b.author],
-            ["分类", category],
-            ["标签", tags],
-            ["状态", stateLabel(b.finished)],
-            ["字数", b.words],
-            ["阅读量", b.reads],
-          ];
-        }),
-      ) + (result.hasMore ? comment(`更多：--offset ${result.nextOffset}`) : "")
-    : comment("没有结果");
-  return { text, json: result, raw };
+  const fetchOne = (q: string) =>
+    sort === "relevance" ? searchRelevance(q, offset) : searchWeb(q, sort, offset);
+  const web = sort !== "relevance";
+  const slim = <T extends SearchBook>(books: T[]) => (brief ? books.map(briefBook) : books);
+
+  if (keywords.length === 1) {
+    const { result, raw } = await fetchOne(keywords[0]!);
+    return {
+      text: formatSearch(result.books, {
+        brief,
+        web,
+        moreOffset: result.hasMore ? result.nextOffset : undefined,
+      }),
+      json: { ...result, books: slim(result.books) },
+      raw,
+    };
+  }
+  const multi = await searchKeywords(keywords, fetchOne);
+  return {
+    text: formatSearch(multi.books, { brief, web }),
+    json: { keywords, books: slim(multi.books), failed: multi.failed },
+    raw: multi.raw,
+  };
 };
 
 const GENDERS = ["male", "female"] as const;

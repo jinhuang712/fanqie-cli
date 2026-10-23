@@ -44,6 +44,19 @@ test("search 缺关键词：用法错误", async () => {
   expect(r.stderr).toContain("关键词");
 });
 
+test("search 关键词是空白：用法错误", async () => {
+  const r = await run("search", "甲", "  ");
+  expect(r.code).toBe(1);
+  expect(r.stdout).toBe("");
+  expect(r.stderr).toContain("关键词");
+});
+
+test("search 多个关键词配合 --brief，参数不对仍是用法错误", async () => {
+  const r = await run("search", "甲", "乙", "--brief", "--offset", "abc");
+  expect(r.code).toBe(1);
+  expect(r.stdout).toBe("");
+});
+
 test("--offset 不是数字：用法错误", async () => {
   const r = await run("search", "x", "--offset", "abc");
   expect(r.code).toBe(1);

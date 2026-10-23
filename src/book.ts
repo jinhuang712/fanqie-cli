@@ -1,4 +1,5 @@
 import { getPage, parseCount } from "./api.ts";
+import { coverUrl } from "./cover.ts";
 import { notFoundError } from "./errors.ts";
 import { formatDate } from "./format.ts";
 
@@ -18,6 +19,16 @@ export interface BookInfo {
   // 当前账号读不全的章节数。没有登录、或没有 SVIP 的账号，前 10 章左右之外的章节都是锁定的
   freeChapters: number;
   lockedChapters: number;
+  // 以下是后加的字段
+  coverUrl: string;
+  authorId: string;
+  // 作者在自己主页上写的签名
+  authorBio: string;
+  // 第一章的发布日期
+  startDate: string;
+  firstChapterId: string;
+  lastChapterId: string;
+  volumes: string[];
 }
 
 export const SVIP_NOTICE = "网页版读前 10 章左右之外的章节，要登录并开通 SVIP 会员";
@@ -58,6 +69,9 @@ export async function getBook(bookId: string): Promise<{ book: BookInfo; raw: un
   }
   const { category, tags } = parseCategories(p.categoryV2);
   const { free, locked } = lockSummary(p.chapterListWithVolume);
+  const flat: Array<{ firstPassTime?: string }> = Array.isArray(p.chapterListWithVolume)
+    ? (p.chapterListWithVolume as Array<Array<{ firstPassTime?: string }>>).flat()
+    : [];
   const book: BookInfo = {
     bookId: String(p.bookId ?? bookId),
     title: decode(p.bookName),
@@ -73,6 +87,13 @@ export async function getBook(bookId: string): Promise<{ book: BookInfo; raw: un
     abstract: decode(p.abstract).trim(),
     freeChapters: free,
     lockedChapters: locked,
+    coverUrl: coverUrl(String(p.sourceUri ?? p.thumbUri ?? "")),
+    authorId: String(p.authorId ?? ""),
+    authorBio: decode(p.description).trim(),
+    startDate: formatDate(flat[0]?.firstPassTime),
+    firstChapterId: String(p.chapterListWithVolume?.[0]?.[0]?.itemId ?? ""),
+    lastChapterId: String(p.lastChapterItemId ?? ""),
+    volumes: Array.isArray(p.volumeNameList) ? p.volumeNameList.map((v: string) => decode(v)) : [],
   };
   return { book, raw: p };
 }

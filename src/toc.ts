@@ -1,5 +1,6 @@
 import { apiGet, getPage, type Decoder } from "./api.ts";
 import { FanqieError, notFoundError } from "./errors.ts";
+import { formatDate } from "./format.ts";
 
 export interface Chapter {
   // 在目录里排第几，从 1 起
@@ -8,12 +9,17 @@ export interface Chapter {
   title: string;
   // 未登录读不全
   locked: boolean;
+  // 以下是后加的字段：发布日期、所在的卷
+  publishedAt?: string;
+  volume?: string;
 }
 
 interface RawChapter {
   itemId: string;
   title: string;
   isChapterLock: boolean;
+  firstPassTime?: string;
+  volume_name?: string;
 }
 
 interface RawToc {
@@ -27,6 +33,8 @@ function toChapters(volumes: RawChapter[][] | undefined, decode: Decoder): Chapt
     itemId: c.itemId,
     title: decode(c.title),
     locked: c.isChapterLock,
+    publishedAt: formatDate(c.firstPassTime),
+    volume: decode(c.volume_name),
   }));
 }
 

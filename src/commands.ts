@@ -3,9 +3,18 @@ import { SVIP_NOTICE, getBook } from "./book.ts";
 import { clearChapters } from "./cache.ts";
 import { libraryCategories, rankCategories, type Gender } from "./categories.ts";
 import { usageError } from "./errors.ts";
-import { block, comment, stateLabel, yamlBlock, yamlDoc, yamlFlow } from "./format.ts";
-import { LIBRARY_PAGE, library, type Status } from "./library.ts";
-import { RANK_PAGE, rank, type RankKind } from "./rank.ts";
+import {
+  block,
+  comment,
+  stateLabel,
+  yamlBlock,
+  yamlDoc,
+  yamlFlow,
+  type Block,
+  type YamlValue,
+} from "./format.ts";
+import { LIBRARY_PAGE, library, type LibraryBook, type Status } from "./library.ts";
+import { RANK_PAGE, rank, type RankBook, type RankKind } from "./rank.ts";
 import { openQrWindow } from "./qrwindow.ts";
 import { formatChapters, readById, readRange } from "./read.ts";
 import { WEB_PAGE, searchRelevance, searchWeb } from "./search.ts";
@@ -82,6 +91,41 @@ const WORDS = ["lt30", "30-50", "50-100", "100-200", "gt200"] as const;
 const LIBRARY_SORTS = ["hot", "new", "words"] as const;
 const FOR = ["rank", "library"] as const;
 
+// 榜单和分类库的一本书。brief 为 true 时去掉封面和简介（目前没有开关，留给以后）
+export function rankEntry(b: RankBook, brief = false): Array<[string, YamlValue | Block]> {
+  return [
+    ["名次", b.rank],
+    [
+      "名次变化",
+      b.rankChange ? `${b.rankChange > 0 ? "上升" : "下降"} ${Math.abs(b.rankChange)}` : undefined,
+    ],
+    ["书id", b.bookId],
+    ["书名", b.title],
+    ["作者", b.author],
+    ["状态", stateLabel(b.finished)],
+    ["字数", b.words],
+    ["阅读量", b.reads],
+    ["最新章节", b.lastChapterTitle],
+    ["更新时间", b.lastUpdate],
+    ["封面", brief ? undefined : b.coverUrl],
+    ["简介", brief ? undefined : block(b.abstract)],
+  ];
+}
+
+export function libraryEntry(b: LibraryBook, brief = false): Array<[string, YamlValue | Block]> {
+  return [
+    ["书id", b.bookId],
+    ["书名", b.title],
+    ["作者", b.author],
+    ["状态", stateLabel(b.finished)],
+    ["字数", b.wordsText],
+    ["阅读量", b.readsText],
+    ["更新时间", b.lastUpdate],
+    ["封面", brief ? undefined : b.coverUrl],
+    ["简介", brief ? undefined : block(b.abstract)],
+  ];
+}
+
 const rankCommand: Handler = async (args, opts) => {
   if (args.length) throw usageError(`rank 不接受参数 "${args.join(" ")}"`);
   const gender: Gender = parseEnum(opts.gender, "gender", GENDERS, "male")!;
@@ -94,18 +138,9 @@ const rankCommand: Handler = async (args, opts) => {
   const r = await rank(gender, kind, opts.category, offset);
   const next = offset + RANK_PAGE;
   const text = r.books.length
-    ? yamlBlock(
-        r.books.map((b) => [
-          ["名次", b.rank],
-          ["书id", b.bookId],
-          ["书名", b.title],
-          ["作者", b.author],
-          ["状态", stateLabel(b.finished)],
-          ["字数", b.words],
-          ["阅读量", b.reads],
-          ["最新章节", b.lastChapterTitle],
-        ]),
-      ) + (next < r.total ? comment(`更多：--offset ${next}`) : "")
+    ? yamlBlock(r.books.map((b) => rankEntry(b))) +
+      comment(`统计截止 ${r.statsDate}`) +
+      (next < r.total ? comment(`更多：--offset ${next}`) : "")
     : comment("没有结果");
   const { raw, ...json } = r;
   return { text, json, raw };
@@ -124,16 +159,8 @@ const libraryCommand: Handler = async (args, opts) => {
     page,
   });
   const text = r.books.length
-    ? yamlBlock(
-        r.books.map((b) => [
-          ["书id", b.bookId],
-          ["书名", b.title],
-          ["作者", b.author],
-          ["状态", stateLabel(b.finished)],
-          ["字数", b.wordsText],
-          ["阅读量", b.readsText],
-        ]),
-      ) + (r.hasMore ? comment(`更多：--page ${page + 1}`) : "")
+    ? yamlBlock(r.books.map((b) => libraryEntry(b))) +
+      (r.hasMore ? comment(`更多：--page ${page + 1}`) : "")
     : comment("没有结果");
   const { raw, ...json } = r;
   return { text, json: { ...json, pageSize: LIBRARY_PAGE }, raw };
@@ -152,6 +179,7 @@ const categoriesCommand: Handler = async (args, opts) => {
             ["分类id", c.id],
             ["名称", c.name],
             ["分组", c.group],
+            ["说明", c.description],
           ]),
         )
       : comment("没有结果"),
@@ -176,6 +204,7 @@ const bookCommand: Handler = async (args) => {
     ["书id", book.bookId],
     ["书名", book.title],
     ["作者", book.author],
+    ["作者签名", book.authorBio],
     ["分类", book.category],
     ["标签", book.tags],
     ["状态", stateLabel(book.finished)],
@@ -187,6 +216,9 @@ const bookCommand: Handler = async (args) => {
     ["锁定章节", locked ? book.lockedChapters : undefined],
     ["最新章节", book.lastChapterTitle],
     ["更新时间", book.lastUpdate],
+    ["开更时间", book.startDate],
+    ["分卷", book.volumes.length > 1 ? book.volumes : undefined],
+    ["封面", book.coverUrl],
     [
       "阅读",
       locked
@@ -200,11 +232,18 @@ const bookCommand: Handler = async (args) => {
 
 const tocCommand: Handler = async (args) => {
   const { chapters, raw } = await getToc(bookIdArg(args, "toc"));
+  // 分卷：只在每一卷的第一章标出卷名，章节仍是一章一行
+  const multiVolume = new Set(chapters.map((c) => c.volume)).size > 1;
   const text = yamlFlow(
-    chapters.map((c) => [
+    chapters.map((c, i) => [
       ["序号", c.order],
       ["章节id", c.itemId],
       ["标题", c.title],
+      ["发布", c.publishedAt],
+      [
+        "卷",
+        multiVolume && (i === 0 || chapters[i - 1]?.volume !== c.volume) ? c.volume : undefined,
+      ],
       ["锁定", c.locked ? "是" : undefined],
     ]),
   );

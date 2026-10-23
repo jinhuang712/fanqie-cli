@@ -1,4 +1,6 @@
 import { apiGet, parseCount } from "./api.ts";
+import { coverUrl } from "./cover.ts";
+import { formatDate } from "./format.ts";
 import { GENDER_PARAM, libraryCategories, resolveCategory, type Gender } from "./categories.ts";
 
 export type Status = "finished" | "ongoing";
@@ -27,6 +29,10 @@ export interface LibraryBook {
   // 接口给的原文，例如 "320.1万字"、"未满1000人在读"
   wordsText: string;
   readsText: string;
+  // 以下是后加的字段
+  abstract: string;
+  coverUrl: string;
+  lastUpdate: string;
 }
 
 interface RawLibrary {
@@ -41,6 +47,9 @@ interface RawLibrary {
       creation_status: number;
       word_count: string;
       read_count: string;
+      abstract?: string;
+      thumb_uri?: string;
+      last_chapter_time?: string;
     }>;
   };
 }
@@ -89,6 +98,9 @@ export async function library(f: LibraryFilter): Promise<LibraryResult> {
       reads: parseCount(readsText),
       wordsText,
       readsText,
+      abstract: decode(b.abstract).trim(),
+      coverUrl: coverUrl(b.thumb_uri),
+      lastUpdate: formatDate(b.last_chapter_time),
     };
   });
   return { page: f.page, hasMore: raw.data.has_more, books, raw };

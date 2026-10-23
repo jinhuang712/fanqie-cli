@@ -1,4 +1,5 @@
 import { forgetUnmapped, getPage } from "./api.ts";
+import { formatDate } from "./format.ts";
 import { getCached, getIndex, putCached, putIndex } from "./cache.ts";
 import { FanqieError, loginError, networkError, notFoundError, usageError } from "./errors.ts";
 import { countPua } from "./fonts.ts";
@@ -11,6 +12,11 @@ export interface ReadChapter {
   title: string;
   text: string;
   fromCache: boolean;
+  // 以下是后加的字段：字数、发布日期、上一章和下一章的 ID
+  words?: number;
+  publishedAt?: string;
+  prevId?: string;
+  nextId?: string;
 }
 
 // 一次最多读几章。依据见 FEATURES.md F7：风控上 100 章也没出过失败，
@@ -77,6 +83,10 @@ async function fetchChapter(itemId: string): Promise<Fetched> {
       itemId: String(cd.itemId),
       title: decode(cd.title),
       text,
+      words: Number(cd.chapterWordNumber) || undefined,
+      publishedAt: formatDate(cd.firstPassTime) || undefined,
+      prevId: cd.preItemId ? String(cd.preItemId) : undefined,
+      nextId: cd.nextItemId ? String(cd.nextItemId) : undefined,
     },
     raw: cd,
     locked: Boolean(cd.isChapterLock),
@@ -97,7 +107,19 @@ async function readOne(
   if (!opts.refresh && !opts.raw) {
     const c = getCached(itemId);
     if (c)
-      return { chapter: { order: c.order, itemId, title: c.title, text: c.text, fromCache: true } };
+      return {
+        chapter: {
+          order: c.order,
+          itemId,
+          title: c.title,
+          text: c.text,
+          fromCache: true,
+          words: c.words,
+          publishedAt: c.publishedAt,
+          prevId: c.prevId,
+          nextId: c.nextId,
+        },
+      };
   }
   // 目录已经标明要登录，且没有登录态：不必下载就能判断
   if (known?.locked && !hasSession()) {
@@ -129,7 +151,17 @@ async function readOne(
   const order = known?.order ?? f.chapter.order;
   const chapter = { ...f.chapter, order, fromCache: false };
   if (!opts.raw)
-    putCached({ itemId, order, title: chapter.title, text: chapter.text, fetchedAt: Date.now() });
+    putCached({
+      itemId,
+      order,
+      title: chapter.title,
+      text: chapter.text,
+      fetchedAt: Date.now(),
+      words: chapter.words,
+      publishedAt: chapter.publishedAt,
+      prevId: chapter.prevId,
+      nextId: chapter.nextId,
+    });
   return { chapter, raw: f.raw };
 }
 

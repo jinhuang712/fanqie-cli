@@ -1,4 +1,4 @@
-<!-- what-we-build: approved 2026-10-23 -->
+<!-- what-we-build: drafted 2026-10-23 -->
 
 # CLI
 

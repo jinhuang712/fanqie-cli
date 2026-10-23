@@ -1,0 +1,30 @@
+name: 字形检查
+
+# 每周检查番茄是不是换了新字形。联网脚本在海外机器上可能被 CDN 重置连接，
+# 所以退出码要区分：1 = 发现不认得的字形（job 失败，GitHub 会发邮件），2 = 网络失败（只警告）。
+on:
+  schedule:
+    - cron: '17 3 * * 1'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  fonts:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: 1.4.0
+      - run: bun install --frozen-lockfile
+      - name: 检查字形表
+        run: |
+          code=0
+          bun run check:fonts || code=$?
+          if [ "$code" -eq 2 ]; then
+            echo "::warning::check:fonts 网络失败（退出码 2），没能完成检查。这是网络问题，不是新字形。"
+            exit 0
+          fi
+          exit "$code"

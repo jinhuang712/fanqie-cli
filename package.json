@@ -1,0 +1,28 @@
+{
+  "name": "fanqie-cli",
+  "version": "0.1.0",
+  "private": true,
+  "description": "番茄小说命令行：搜索、书籍详情、目录、正文",
+  "license": "AGPL-3.0-or-later",
+  "type": "module",
+  "bin": {
+    "fanqie": "src/cli.ts"
+  },
+  "scripts": {
+    "fanqie": "bun src/cli.ts",
+    "typecheck": "tsc --noEmit",
+    "test": "bun test",
+    "check:hosts": "bun scripts/check-hosts.ts",
+    "check:fonts": "bun scripts/check-fonts.ts",
+    "test:live": "FANQIE_LIVE=1 bun test test/live"
+  },
+  "devDependencies": {
+    "@types/bun": "latest",
+    "@types/fontkit": "^2.0.9",
+    "typescript": "5.9.3"
+  },
+  "dependencies": {
+    "fontkit": "^2.0.4",
+    "playwright-core": "^1.64.1"
+  }
+}

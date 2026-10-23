@@ -1,6 +1,6 @@
 import { decoderFor, parseCount, type Decoder } from "./api.ts";
 import { pageGet } from "./browser.ts";
-import { FanqieError, networkError } from "./errors.ts";
+import { networkError } from "./errors.ts";
 import { fontHashFromHeader } from "./fonts.ts";
 import { comment, formatDate, block, stateLabel, yamlBlock } from "./format.ts";
 import { getJson } from "./http.ts";
@@ -148,69 +148,6 @@ export async function searchWeb(
   return { result: parseWebSearch(raw, decode, offset), raw };
 }
 
-// ---- 多个关键词 ----
-
-export interface MergedBook extends SearchBook {
-  matchedKeywords: string[];
-}
-
-export interface KeywordRun {
-  keyword: string;
-  books: SearchBook[];
-}
-
-// 并集，按书 id 去重；命中的关键词越多越靠前，同样多的保持先看到的顺序。书的内容取第一次看到的那份
-export function mergeKeywordRuns(runs: KeywordRun[]): MergedBook[] {
-  const seen = new Map<string, MergedBook>();
-  for (const { keyword, books } of runs) {
-    for (const b of books) {
-      const hit = seen.get(b.bookId);
-      if (!hit) seen.set(b.bookId, { ...b, matchedKeywords: [keyword] });
-      else if (!hit.matchedKeywords.includes(keyword)) hit.matchedKeywords.push(keyword);
-    }
-  }
-  // toSorted 是稳定排序
-  return [...seen.values()].toSorted((a, b) => b.matchedKeywords.length - a.matchedKeywords.length);
-}
-
-export interface MultiSearch {
-  books: MergedBook[];
-  // 失败的关键词和原因
-  failed: Array<{ keyword: string; message: string }>;
-  raw: Record<string, unknown>;
-}
-
-// 按顺序一个个搜（请求之间的间隔由 http.ts 控制）。某个关键词网络失败只警告，全部失败才抛错；
-// 其他类型的错误（用法、找不到）直接抛
-export async function searchKeywords(
-  keywords: string[],
-  fetchOne: (keyword: string) => Promise<{ result: SearchResult; raw: unknown }>,
-  warn: (message: string) => void = (m) => process.stderr.write(`${m}\n`),
-): Promise<MultiSearch> {
-  const runs: KeywordRun[] = [];
-  const failed: MultiSearch["failed"] = [];
-  const raw: Record<string, unknown> = {};
-  for (const keyword of keywords) {
-    try {
-      // oxlint-disable-next-line no-await-in-loop
-      const one = await fetchOne(keyword);
-      runs.push({ keyword, books: one.result.books });
-      raw[keyword] = one.raw;
-    } catch (e) {
-      if (!(e instanceof FanqieError) || e.kind !== "network") throw e;
-      const message = e.message.split("\n")[0] ?? "";
-      failed.push({ keyword, message });
-      warn(`警告：关键词 "${keyword}" 搜索失败，已跳过：${message}`);
-    }
-  }
-  if (!runs.length) {
-    throw networkError(
-      `所有关键词都搜索失败：${failed.map((f) => `"${f.keyword}"（${f.message}）`).join("；")}`,
-    );
-  }
-  return { books: mergeKeywordRuns(runs), failed, raw };
-}
-
 // ---- 输出 ----
 
 // 简短形式：不含简介、最新章节这些额外字段
@@ -233,14 +170,11 @@ export interface FormatOptions {
   brief: boolean;
   // 网页搜索：分类是逗号分隔的多个标签，第一个是主分类
   web: boolean;
-  // 有"更多"提示时的下一个偏移；多关键词时不给
+  // 有"更多"提示时的下一个偏移
   moreOffset?: number;
 }
 
-export function formatSearch(
-  books: Array<SearchBook & { matchedKeywords?: string[] }>,
-  o: FormatOptions,
-): string {
+export function formatSearch(books: SearchBook[], o: FormatOptions): string {
   if (!books.length) return comment("没有结果");
   const text = yamlBlock(
     books.map((b) => {
@@ -254,7 +188,6 @@ export function formatSearch(
         ["书id", b.bookId],
         ["书名", b.title],
         ["作者", b.author],
-        ["命中关键词", b.matchedKeywords],
         ["分类", category],
         ["标签", tags],
         ["状态", stateLabel(b.finished)],

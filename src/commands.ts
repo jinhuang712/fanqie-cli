@@ -8,15 +8,7 @@ import { LIBRARY_PAGE, library, type Status } from "./library.ts";
 import { RANK_PAGE, rank, type RankKind } from "./rank.ts";
 import { openQrWindow } from "./qrwindow.ts";
 import { formatChapters, readById, readRange } from "./read.ts";
-import {
-  WEB_PAGE,
-  briefBook,
-  formatSearch,
-  searchKeywords,
-  searchRelevance,
-  searchWeb,
-  type SearchBook,
-} from "./search.ts";
+import { WEB_PAGE, briefBook, formatSearch, searchRelevance, searchWeb } from "./search.ts";
 import { getToc } from "./toc.ts";
 import type { Options, Output } from "./types.ts";
 
@@ -45,9 +37,9 @@ const SORTS = ["relevance", "new", "hot"] as const;
 
 const search: Handler = async (args, opts) => {
   if (args.some((a) => !a.trim())) throw usageError("搜索关键词不能是空的");
-  // 多个关键词各搜一次再合并；重复的关键词只算一个
-  const keywords = [...new Set(args.map((a) => a.trim()))];
-  if (!keywords.length) throw usageError("缺少搜索关键词");
+  // 多个参数用一个空格连成一个搜索词，只发一次请求
+  const query = args.map((a) => a.trim()).join(" ");
+  if (!query) throw usageError("缺少搜索关键词");
   const offset = parseNonNegative(opts.offset, "offset");
   const sort = parseEnum(opts.sort, "sort", SORTS, "relevance")!;
   const brief = Boolean(opts.brief);
@@ -55,28 +47,18 @@ const search: Handler = async (args, opts) => {
   if (sort !== "relevance" && offset % WEB_PAGE !== 0) {
     throw usageError(`--sort ${sort} 每页 ${WEB_PAGE} 本，--offset 要是 ${WEB_PAGE} 的倍数`);
   }
-  const fetchOne = (q: string) =>
-    sort === "relevance" ? searchRelevance(q, offset) : searchWeb(q, sort, offset);
   const web = sort !== "relevance";
-  const slim = <T extends SearchBook>(books: T[]) => (brief ? books.map(briefBook) : books);
-
-  if (keywords.length === 1) {
-    const { result, raw } = await fetchOne(keywords[0]!);
-    return {
-      text: formatSearch(result.books, {
-        brief,
-        web,
-        moreOffset: result.hasMore ? result.nextOffset : undefined,
-      }),
-      json: { ...result, books: slim(result.books) },
-      raw,
-    };
-  }
-  const multi = await searchKeywords(keywords, fetchOne);
+  const { result, raw } = web
+    ? await searchWeb(query, sort as "new" | "hot", offset)
+    : await searchRelevance(query, offset);
   return {
-    text: formatSearch(multi.books, { brief, web }),
-    json: { keywords, books: slim(multi.books), failed: multi.failed },
-    raw: multi.raw,
+    text: formatSearch(result.books, {
+      brief,
+      web,
+      moreOffset: result.hasMore ? result.nextOffset : undefined,
+    }),
+    json: { ...result, books: brief ? result.books.map(briefBook) : result.books },
+    raw,
   };
 };
 

@@ -1,12 +1,9 @@
 import { expect, test } from "bun:test";
-import { networkError, usageError } from "../src/errors.ts";
 import {
   briefBook,
   formatSearch,
-  mergeKeywordRuns,
   parseSearch,
   parseWebSearch,
-  searchKeywords,
   type SearchBook,
 } from "../src/search.ts";
 
@@ -120,49 +117,6 @@ test("parseWebSearch 读出简介、最新章节、更新时间、封面，并�
   expect(empty.cover).toBeUndefined();
 });
 
-test("mergeKeywordRuns：并集、按书 id 去重、命中多的在前、同数保持先后", () => {
-  const merged = mergeKeywordRuns([
-    { keyword: "甲", books: [book("1"), book("2"), book("3")] },
-    { keyword: "乙", books: [book("4"), book("3"), book("2")] },
-    { keyword: "丙", books: [book("3"), book("5")] },
-  ]);
-  expect(merged.map((b) => b.bookId)).toEqual(["3", "2", "1", "4", "5"]);
-  expect(merged[0]!.matchedKeywords).toEqual(["甲", "乙", "丙"]);
-  expect(merged[1]!.matchedKeywords).toEqual(["甲", "乙"]);
-  expect(merged[4]!.matchedKeywords).toEqual(["丙"]);
-});
-
-test("searchKeywords：某个关键词网络失败只警告，其余照常", async () => {
-  const warnings: string[] = [];
-  const r = await searchKeywords(
-    ["甲", "乙"],
-    async (k) => {
-      if (k === "甲") throw networkError("连接被重置");
-      return { result: { books: [book("1")], hasMore: false, nextOffset: 0 }, raw: { k } };
-    },
-    (m) => warnings.push(m),
-  );
-  expect(r.books.map((b) => b.matchedKeywords)).toEqual([["乙"]]);
-  expect(r.failed).toEqual([{ keyword: "甲", message: "连接被重置" }]);
-  expect(warnings).toHaveLength(1);
-  expect(Object.keys(r.raw)).toEqual(["乙"]);
-});
-
-test("searchKeywords：全部失败抛网络错误；非网络错误直接抛", async () => {
-  const fail = async () => {
-    throw networkError("x");
-  };
-  await expect(searchKeywords(["甲", "乙"], fail, () => {})).rejects.toMatchObject({
-    kind: "network",
-  });
-  const bad = async () => {
-    throw usageError("y");
-  };
-  await expect(searchKeywords(["甲", "乙"], bad, () => {})).rejects.toMatchObject({
-    kind: "usage",
-  });
-});
-
 test("formatSearch：默认输出带简介块和额外字段，brief 不带", () => {
   const books = [
     book("1", {
@@ -188,12 +142,8 @@ test("formatSearch：默认输出带简介块和额外字段，brief 不带", ()
   expect(brief).toContain("书名: 示例书1");
 });
 
-test("formatSearch：网页分类拆成分类和标签；多关键词有命中字段，没有更多提示", () => {
-  const out = formatSearch(
-    [{ ...book("1", { category: "玄幻,架空,腹黑" }), matchedKeywords: ["甲", "乙"] }],
-    { brief: true, web: true },
-  );
-  expect(out).toContain("命中关键词: [甲, 乙]");
+test("formatSearch：网页分类拆成分类和标签；有下一页才给更多提示", () => {
+  const out = formatSearch([book("1", { category: "玄幻,架空,腹黑" })], { brief: true, web: true });
   expect(out).toContain("分类: 玄幻");
   expect(out).toContain("标签: [架空, 腹黑]");
   expect(out).not.toContain("更多");

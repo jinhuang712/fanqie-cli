@@ -49,6 +49,7 @@ fanqie rank --category 西方奇幻           # 榜单
 fanqie book <书id>                       # 书籍详情
 fanqie toc <书id>                        # 目录
 fanqie read <书id> 1-3                   # 读第 1 到 3 章
+fanqie search 修仙 秦始皇 --brief         # 多个关键词合并，只要基本字段
 fanqie search 修仙 --json | jq '.books[0]'
 ```
 

@@ -283,9 +283,14 @@ const whoamiCommand: Handler = async () => {
       ? yamlDoc([
           ["已登录", "是"],
           ["账号", user.name || user.id],
+          ["会员", user.vip ? "是" : "否"],
         ])
       : yamlDoc([["已登录", "否"]]),
-    json: { loggedIn: Boolean(user), user: user ?? null },
+    // 账号 id 只在 --raw 里，--json 不带
+    json: {
+      loggedIn: Boolean(user),
+      user: user ? { name: user.name, vip: user.vip } : null,
+    },
     raw: { loggedIn: Boolean(user), user: user ?? null },
   };
 };

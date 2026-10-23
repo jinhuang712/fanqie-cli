@@ -128,6 +128,8 @@ export async function finishLogin(t: QrTicket, redirectUrl: string): Promise<Use
 export interface User {
   id: string;
   name: string;
+  // 接口的 isVip：账号是不是会员。只在一个 SVIP 账号上见过 true，没验证过它和 SVIP 是否一一对应
+  vip: boolean;
 }
 
 async function fetchUser(jar: Jar): Promise<User | undefined> {
@@ -136,11 +138,14 @@ async function fetchUser(jar: Jar): Promise<User | undefined> {
     headers: { cookie: cookieHeader(jar) },
   });
   try {
-    const j = (await res.json()) as { code?: number; data?: { id?: string; name?: string } };
+    const j = (await res.json()) as {
+      code?: number;
+      data?: { id?: string; name?: string; isVip?: boolean };
+    };
     const id = j.data?.id;
     // 未登录时 code 是 -1，data 为空；id 为 0 或 1 也是未登录
     if (j.code !== 0 || !id || id === "0" || id === "1") return undefined;
-    return { id, name: j.data?.name ?? "" };
+    return { id, name: j.data?.name ?? "", vip: j.data?.isVip === true };
   } catch {
     return undefined;
   }

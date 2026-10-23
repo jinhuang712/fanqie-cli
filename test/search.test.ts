@@ -81,7 +81,7 @@ test("parseWebSearch 读出简介、最新章节、更新时间、封面，并�
             last_chapter_time: "1760000000",
             first_chapter_id: "111",
             last_chapter_id: "222",
-            thumb_url: "https://example.com/a.jpg",
+            thumb_url: "https://example.com/novel-pic/abc123~tplv.jpg?sign=x",
           },
           {
             book_id: "2",
@@ -109,7 +109,7 @@ test("parseWebSearch 读出简介、最新章节、更新时间、封面，并�
     lastUpdate: "2025-10-09",
     firstChapterId: "111",
     lastChapterId: "222",
-    cover: "https://example.com/a.jpg",
+    cover: "https://p3-novel.byteimg.com/origin/novel-pic/abc123",
   });
   const empty = r.books[1]!;
   expect(empty.abstract).toBeUndefined();

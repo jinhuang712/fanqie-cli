@@ -1,3 +1,4 @@
+import { coverUrl } from "./cover.ts";
 import { decoderFor, parseCount, type Decoder } from "./api.ts";
 import { pageGet } from "./browser.ts";
 import { networkError } from "./errors.ts";
@@ -95,6 +96,7 @@ interface RawWebSearch {
       last_chapter_time?: string;
       first_chapter_id?: string;
       last_chapter_id?: string;
+      thumb_uri?: string;
       thumb_url?: string;
     }>;
   };
@@ -116,7 +118,7 @@ export function parseWebSearch(raw: RawWebSearch, decode: Decoder, offset: numbe
     lastUpdate: formatDate(b.last_chapter_time) || undefined,
     firstChapterId: b.first_chapter_id || undefined,
     lastChapterId: b.last_chapter_id || undefined,
-    cover: b.thumb_url || undefined,
+    cover: coverUrl(b.thumb_uri || b.thumb_url) || undefined,
   }));
   const next = offset + WEB_PAGE;
   return { books, hasMore: next < raw.data.total_count, nextOffset: next };

@@ -96,5 +96,8 @@ export async function main(argv: string[]): Promise<number> {
 }
 
 if (import.meta.main) {
-  void main(process.argv.slice(2)).then((code) => process.exit(code));
+  // 不调用 process.exit：输出接管道时，它会把超过 128KB 的部分截掉
+  void main(process.argv.slice(2)).then((code) => {
+    process.exitCode = code;
+  });
 }

@@ -1,5 +1,9 @@
 <!-- what-we-build: drafted 2026-10-23 -->
 
+<p align="center">
+  <img src="docs/hero.png" alt="fanqie-cli：番茄小说的命令行" width="100%">
+</p>
+
 # 🍅 fanqie-cli
 
 [![CI](https://github.com/jinhuang712/fanqie-cli/actions/workflows/ci.yml/badge.svg)](https://github.com/jinhuang712/fanqie-cli/actions/workflows/ci.yml)

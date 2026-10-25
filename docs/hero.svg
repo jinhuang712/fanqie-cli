@@ -1,0 +1,40 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1280" height="400" viewBox="0 0 1280 400">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#2a1210"/>
+      <stop offset="1" stop-color="#14100f"/>
+    </linearGradient>
+    <radialGradient id="glow" cx="0.2" cy="0.3" r="0.6">
+      <stop offset="0" stop-color="#ff6b35" stop-opacity="0.28"/>
+      <stop offset="1" stop-color="#ff6b35" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+  <rect width="1280" height="400" rx="20" fill="url(#bg)"/>
+  <rect width="1280" height="400" rx="20" fill="url(#glow)"/>
+
+  <!-- tomato -->
+  <g transform="translate(120 200)">
+    <circle r="62" fill="#e8472b"/>
+    <ellipse cx="-20" cy="-22" rx="16" ry="10" fill="#fff" opacity="0.18" transform="rotate(-35 -20 -22)"/>
+    <path d="M0 -58 C-14 -78 -34 -72 -40 -62 C-26 -62 -18 -56 -8 -52 C-22 -50 -30 -40 -30 -34 C-18 -42 -8 -44 0 -44 C8 -44 18 -42 30 -34 C30 -40 22 -50 8 -52 C18 -56 26 -62 40 -62 C34 -72 14 -78 0 -58 Z" fill="#3fae5a"/>
+  </g>
+
+  <!-- title -->
+  <text x="230" y="190" font-family="Helvetica Neue, Helvetica, Arial, sans-serif" font-size="84" font-weight="700" fill="#fff4ec">fanqie-cli</text>
+  <text x="232" y="240" font-family="PingFang SC, Hiragino Sans GB, Arial Unicode MS, sans-serif" font-size="26" fill="#ffb18f">番茄小说的命令行：搜索、榜单、目录、正文</text>
+  <text x="232" y="284" font-family="PingFang SC, Hiragino Sans GB, Arial Unicode MS, sans-serif" font-size="22" fill="#a89890">给 Agent 和脚本用 · 官方数据直连 · 字体自动还原</text>
+
+  <!-- terminal -->
+  <g transform="translate(790 70)">
+    <rect width="440" height="260" rx="12" fill="#0d0b0b" stroke="#3a2a26"/>
+    <circle cx="22" cy="22" r="6" fill="#ff5f56"/><circle cx="42" cy="22" r="6" fill="#ffbd2e"/><circle cx="62" cy="22" r="6" fill="#27c93f"/>
+    <g xml:space="preserve" font-family="Menlo, Monaco, monospace" font-size="17">
+      <text x="24" y="70" fill="#ff8a5c">$ <tspan fill="#f2e6df">fanqie search 修仙</tspan></text>
+      <text x="24" y="104" fill="#a89890">- title: 书名</text>
+      <text x="24" y="130" fill="#a89890">  author: 作者</text>
+      <text x="24" y="156" fill="#a89890">  abstract: 简介…</text>
+      <text x="24" y="196" fill="#ff8a5c">$ <tspan fill="#f2e6df">fanqie read &lt;book&gt; 1</tspan></text>
+      <text x="24" y="230" fill="#a89890">第一章 …</text>
+    </g>
+  </g>
+</svg>

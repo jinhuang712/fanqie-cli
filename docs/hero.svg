@@ -9,19 +9,8 @@
   <circle cx="1180" cy="-20" r="190" fill="#ff6b35" opacity="0.10"/>
   <circle cx="60" cy="430" r="140" fill="#e8472b" opacity="0.08"/>
 
-  <!-- tomato (sliced, original drawing) -->
-  <g transform="translate(80 58)">
-    <ellipse cx="42" cy="46" rx="42" ry="34" fill="#f2682a"/>
-    <ellipse cx="42" cy="46" rx="33" ry="25" fill="#ff9a62"/>
-    <g fill="#fff1e2">
-      <ellipse cx="42" cy="38" rx="4" ry="8"/>
-      <ellipse cx="26" cy="46" rx="4" ry="8" transform="rotate(-50 26 46)"/>
-      <ellipse cx="58" cy="46" rx="4" ry="8" transform="rotate(50 58 46)"/>
-      <ellipse cx="33" cy="58" rx="3.5" ry="7" transform="rotate(-20 33 58)"/>
-      <ellipse cx="51" cy="58" rx="3.5" ry="7" transform="rotate(20 51 58)"/>
-    </g>
-    <path d="M42 8 C34 -4 22 -2 18 4 C26 4 30 8 36 10 C28 12 24 18 24 22 C30 18 36 16 42 16 C48 16 54 18 60 22 C60 18 56 12 48 10 C54 8 58 4 66 4 C62 -2 50 -4 42 8 Z" fill="#3fae5a"/>
-  </g>
+  <image href="logo.png" x="80" y="40" width="104" height="104"/>
+
   <text x="80" y="236" font-family="Helvetica Neue, Helvetica, Arial, sans-serif" font-size="92" font-weight="800" fill="#2a1712">fanqie-cli</text>
   <text x="84" y="288" font-family="PingFang SC, Hiragino Sans GB, Arial Unicode MS, sans-serif" font-size="28" fill="#c2410c">番茄小说的命令行</text>
   <text x="84" y="326" font-family="PingFang SC, Hiragino Sans GB, Arial Unicode MS, sans-serif" font-size="20" fill="#7a625a">搜索 · 榜单 · 目录 · 正文 · 给 Agent 和脚本用</text>

@@ -16,11 +16,12 @@
   <rect width="512" height="512" rx="115" fill="url(#tile)"/>
   <rect x="3" y="3" width="506" height="506" rx="112" fill="none" stroke="#ff6b35" stroke-opacity="0.35" stroke-width="3"/>
   <!-- circuit traces -->
-  <g stroke="#ff6b35" stroke-opacity="0.35" stroke-width="5" stroke-linecap="round" fill="none">
-    <path d="M60 300 H110 L135 325"/><path d="M452 300 H402 L377 325"/>
-    <path d="M70 360 H105"/><path d="M442 360 H407"/>
+  <g stroke="#ff6b35" stroke-opacity="0.4" stroke-width="5" stroke-linecap="round" fill="none">
+    <path d="M36 300 H72"/><path d="M476 300 H440"/>
+    <path d="M36 360 H64"/><path d="M476 360 H448"/>
   </g>
-  <g fill="#ff6b35" fill-opacity="0.55"><circle cx="60" cy="300" r="7"/><circle cx="452" cy="300" r="7"/><circle cx="70" cy="360" r="7"/><circle cx="442" cy="360" r="7"/></g>
+  <g fill="#ff6b35" fill-opacity="0.6"><circle cx="36" cy="300" r="6"/><circle cx="476" cy="300" r="6"/><circle cx="36" cy="360" r="6"/><circle cx="476" cy="360" r="6"/></g>
+  <g transform="translate(256 256) scale(1.12) translate(-256 -274)">
   <!-- tomato body: rounded octagon-ish -->
   <circle cx="256" cy="288" r="148" fill="url(#body)"/>
   <circle cx="256" cy="288" r="148" fill="none" stroke="#fff" stroke-opacity="0.18" stroke-width="4"/>
@@ -32,5 +33,6 @@
   <g fill="none" stroke="#fff6ee" stroke-width="26" stroke-linecap="round" stroke-linejoin="round">
     <path d="M200 250 L252 292 L200 334"/>
     <path d="M278 338 H334"/>
+  </g>
   </g>
 </svg>
